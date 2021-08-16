@@ -87,13 +87,13 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         //RSA(공개키,개인키) 방식은 아니고 Hash암호방식 => 서버만 알고있는 개인키
         String jwtToken = JWT.create()
                 .withSubject("cos토큰") //의미없음 
-                .withExpiresAt(new Date(System.currentTimeMillis() + (60000 * 10))) // 토큰 유효시간 만료시간 1분 * 10
+                .withExpiresAt(new Date(System.currentTimeMillis()+(JwtProperties.EXPIRATION_TIME))) // 토큰 유효시간 만료시간 1분 * 10
                 .withClaim("id", principalDetails.getUser().getId()) //비공개 클레임 키벨류
                 .withClaim("username", principalDetails.getUser().getUsername())
-                .sign(Algorithm.HMAC512("cos"));//내서버만 아는 고유한 시크릿키
+                .sign(Algorithm.HMAC512(JwtProperties.SECRET));//내서버만 아는 고유한 시크릿키
 
 
-        response.addHeader("Authorization","Bearer "+jwtToken); //사용자에게 응답할 response 헤더안에
+        response.addHeader(JwtProperties.HEADER_STRING,JwtProperties.TOKEN_PREFIX+jwtToken); //사용자에게 응답할 response 헤더안에
 
         /**
          * 기존 시큐리티 Ouath2 방식은
