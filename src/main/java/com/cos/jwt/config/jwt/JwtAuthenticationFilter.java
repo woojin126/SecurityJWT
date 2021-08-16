@@ -94,12 +94,25 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
 
         response.addHeader("Authorization","Bearer "+jwtToken); //사용자에게 응답할 response 헤더안에
-       /*
-       Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzUxMiJ9.
-       eyJzdWIiOiJjb3PthqDtgbAiLCJpZCI6MSwiZXhwIjoxNjI5MDg3OTYyLCJ1c2VybmFtZSI6Indvb2ppbiJ9.
-       ItuMoTaJtvSGgYhNdLlFcDV-eLDW2BluSfytTsHcDLpcmDk_tEdnaSOw9EhOuk-rCwjA1uFFavim7M5TG8PHcw
-       포스트맨 header 확인하면 에가이제 토큰임!
-        */
+
+        /**
+         * 기존 시큐리티 Ouath2 방식은
+         * 유저네임,패스워드 로그인 정상
+         * 서보쪽 세션ID생성
+         * 클라이언트 쿠키 세션ID를 응답
+         *
+         * 요청할 때마다 쿠키값 세션ID를 항상 들고 서버쪽으로 요청하기 때문에
+         * session.getAttribute("세션값 확인");
+         * 서버는 세션ID가 유요한지 판단해서 유효하면 인증이 필요한 페이지로 접근하게 하면된다.
+         * ------------------------------------------------------------------
+         * 현재우리가하는 JWT 방식은
+         * 유저네임, 패스워드 로그인 정상
+         * JWT 토큰을 생성
+         * 클라이언트 쪽으로 JWT토큰을 응답
+         *
+         * 요청할 때마다 JWT토큰을 가지고 요청
+         * 서버는 JWT토큰이 유요한지를 판단( 필터를 만들어줘야한다 )
+         */
     }
 
 }
