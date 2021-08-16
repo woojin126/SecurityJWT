@@ -1,7 +1,9 @@
 package com.cos.jwt.model;
 
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -11,10 +13,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-@Getter
-@Setter
+
+
 @Entity
+@Data
 public class User {
+
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -29,5 +33,15 @@ public class User {
             return Arrays.asList(this.roles.split(","));
         }
         return new ArrayList<>(); //NULL방지
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "id=" + id +
+                ", username='" + username + '\'' +
+                ", password='" + password + '\'' +
+                ", roles='" + roles + '\'' +
+                '}';
     }
 }
