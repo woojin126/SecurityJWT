@@ -12,7 +12,7 @@ public class MyFilter1 implements Filter {
 
 
         System.out.println("필터1");
-        chain.doFilter(request, response);
+        chain.doFilter(request, response); //이렇게 체인에 담아줘야 프로세스가 끝나지않고 필터가 끝나지않고 계속 프로세스를 진행 한다.
 
     }
 }

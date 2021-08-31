@@ -39,7 +39,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
             .and()
                 .addFilter(corsFilter) //@CrossOrigin(인증이없을 때 사용가능), //모든요청에 이제 설정한 filter를 다 지나간다. 내서버는 cors 정책에서 벗어날수있다.(다허용함) 시큐리티 필터에 등록인증할때는 이방식
                 .formLogin().disable() //jwt사용으로 폼 로그인은 안한다.
-                .httpBasic().disable() //기본 http 방식은 안쓰겠다.
+                .httpBasic().disable() //기본 http 방식은 안쓰겠다. 이렇게 막아놓으면 난 Bearer 방식을 쓸꺼다!
                 .addFilter(new JwtAuthenticationFilter(authenticationManager())) //AuthenticationManager 필수
                 .addFilter(new JwtAuthorizationFilter(authenticationManager(),userRepository)) //AuthenticationManager 필수
                 .authorizeRequests()
@@ -50,7 +50,5 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers("/api/v1/admin/**")
                 .access("hasRole('ROLE_ADMIN')")
                 .anyRequest().permitAll();
-
-
     }
 }

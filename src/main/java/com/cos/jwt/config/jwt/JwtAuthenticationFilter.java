@@ -5,21 +5,17 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.cos.jwt.config.auth.PrincipalDetails;
 import com.cos.jwt.model.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Date;
 
@@ -29,7 +25,6 @@ import java.util.Date;
  * 그러면 loadUserByUsername이 자동으로 실행됨.
  * 3.PrincipalDetails를 세션에 담고 => 세션에 담는이유는 SecurityConfig의 권한 관리를 위해서 , 권한 관리를 않아면 세션에 담을 필요가 없다!
  * 4.JWT토큰을 만들어서 응답해주면 됨
- *
  */
 // 스프링 시큐리티에 UsernamePasswordAuthenticationFilter 이필터가 잇음
 // /login 요청해서 username,password 전송하면 (post로)
@@ -37,21 +32,20 @@ import java.util.Date;
 //현재는 config  .formLogin().disable() 설정을해서 동작을 안함 그래서 따로 config에 설정해줘야함
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+   // 아이디, 패스워드 기반의 인증을 담당하고 있는 UsernamePasswordAuthenticationFilter 대해 알아보겠습니다.
 
     private final AuthenticationManager authenticationManager;
+    //먼저, 인증에 관련한 책임을 수행하는 AuthenticationManager입니다.
     // /login 요청을 하면 로그인 시도를 위해서 실행되는 함수
 
-    @Override //AuthenticationManager를 통해서 로그인 시도
+  
+    @Override //login 요청을하면 로그인 시도를 위해서 실행되는 함수
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
         System.out.println("JwtAuthenticationFilter :로그인 시도중");
 
 
         try {
-        /*    BufferedReader br = request.getReader();
-            String input = null;
-            while((input = br.readLine()) != null) {
-                System.out.println(input);
-            }*/
+
             ObjectMapper om = new ObjectMapper();
             User user = om.readValue(request.getInputStream(), User.class); //유저엔티티에 담아줌 JSON 요청을 파싱한것을
             System.out.println("user = " + user);
@@ -59,12 +53,13 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             UsernamePasswordAuthenticationToken authenticationToken
                     = new UsernamePasswordAuthenticationToken(user.getUsername(), user.getPassword()); //토큰 만들걸로 로그인시도 ㄱㄱ
 
+
             //PrincipalDetailsService의 loadUserByUsername() 함수가 실행된 후 정상이면 authentication이 리턴됨 (로그인이 완료되었다는거)
-            //DB의 USERNAME ,PASSWORD가 내 가입력한 값 과 같다는 것
-            Authentication authentication = // authentication 내로그인 정보가 담기고
+            //인증이된다면 값을 반환해줄것
+            Authentication authentication = // authentication 인증된 내로그인 정보가 담기고
                     authenticationManager.authenticate(authenticationToken);//이게실행 될떄 PrincipalDetailsService에 loadUserByUsername 이실행된다.
 
-
+            //authentication 객체가 session 영역에 저장됨 => 로그인이 되었다는 것
             PrincipalDetails principalDetails = (PrincipalDetails) authentication.getPrincipal();
             System.out.println("로그인이 완료됨 + principalDetails = " + principalDetails.getUser().getUsername());
 
@@ -81,19 +76,19 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     //여기서 JWT 토큰을 만들어서 request요청한 사용자에게 jwt 토큰을 응답해주면 된다.
     @Override
     protected void successfulAuthentication(HttpServletRequest request, HttpServletResponse response, FilterChain chain, Authentication authResult) throws IOException, ServletException {
-        System.out.println("successfulAuthentication 실행됨: 인증이 완료되었다는것");
+        System.out.println("successfulAuthentication 실행됨: 인증이 완료된후 jwt토큰 발급작업");
         PrincipalDetails principalDetails = (PrincipalDetails) authResult.getPrincipal();
 
         //RSA(공개키,개인키) 방식은 아니고 Hash암호방식 => 서버만 알고있는 개인키
-        String jwtToken = JWT.create()
+        String jwtToken = JWT.create() //gradle에  java-jwt 를 걸어놨기때문에 사용가능
                 .withSubject("cos토큰") //의미없음 
-                .withExpiresAt(new Date(System.currentTimeMillis()+(JwtProperties.EXPIRATION_TIME))) // 토큰 유효시간 만료시간 1분 * 10
+                .withExpiresAt(new Date(System.currentTimeMillis() + (JwtProperties.EXPIRATION_TIME))) // 토큰 유효시간 만료시간 1분 * 10
                 .withClaim("id", principalDetails.getUser().getId()) //비공개 클레임 키벨류
                 .withClaim("username", principalDetails.getUser().getUsername())
                 .sign(Algorithm.HMAC512(JwtProperties.SECRET));//내서버만 아는 고유한 시크릿키
 
 
-        response.addHeader(JwtProperties.HEADER_STRING,JwtProperties.TOKEN_PREFIX+jwtToken); //사용자에게 응답할 response 헤더안에
+        response.addHeader(JwtProperties.HEADER_STRING, JwtProperties.TOKEN_PREFIX + jwtToken); //사용자에게 응답할 response 헤더안에
 
         /**
          * 기존 시큐리티 Ouath2 방식은
